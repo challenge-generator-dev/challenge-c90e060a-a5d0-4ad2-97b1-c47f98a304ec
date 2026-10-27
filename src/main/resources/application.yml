@@ -1,0 +1,118 @@
+spring:
+  application:
+    name: credit-request-evaluation
+  
+  profiles:
+    active: dev
+    
+  datasource:
+    url: jdbc:h2:mem:creditdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+    hikari:
+      connection-timeout: 30000
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      pool-name: CreditRequestHikariPool
+      
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.H2Dialect
+        jdbc:
+          batch_size: 50
+          fetch_size: 50
+        order_inserts: true
+        order_updates: true
+        connection:
+          provider_disables_autocommit: true
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      settings:
+        web-allow-others: true
+
+  mvc:
+    async:
+      request-timeout: 30000
+
+server:
+  port: 8080
+  servlet:
+    context-path: /api/credit
+  tomcat:
+    max-swallow-size: -1
+    max-http-form-post-size: 20MB
+    max-threads: 200
+    min-spare-threads: 10
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,env,loggers
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+  info:
+    env:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+logging:
+  level:
+    root: INFO
+    com.evaluacion.springboot: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
+    org.springframework.transaction: TRACE
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/credit-request-evaluation.log
+    max-size: 10MB
+    max-history: 7
+
+app:
+  application-name: Credit Request Evaluation System
+  version: 1.0.0
+  environment: ${spring.profiles.active}
+  max-request-size: 20
+  idempotency:
+    enabled: true
+    key-prefix: credit-request-
+    expiration-hours: 24
+  antifraud:
+    base-url: http://localhost:8081/api/antifraud
+    timeout-millis: 2000
+    retry:
+      max-attempts: 3
+      backoff-millis: 500
+  risk-bureau:
+    base-url: http://localhost:8082/api/risk
+    timeout-millis: 3000
+    retry:
+      max-attempts: 2
+      backoff-millis: 1000
+  channels:
+    - name: MOBILE
+      max-requests-per-second: 500
+    - name: WEB
+      max-requests-per-second: 1000
+"
